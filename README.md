@@ -3,8 +3,8 @@ Addon for viewing abilities and talents of all classes and specializations in Wo
 
 How to use
 -------------------
-1. For now you habe to type "/classinfo" ingame for now.
-2. Click the icons to choose a class and a specialization
+1. Type "/classinfo" to open the addon
+2. Click the icons to choose a class and specialization
 3. Go through the tabs to see the different abilities and talents
 
 
