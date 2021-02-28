@@ -10,4 +10,4 @@ How to use
 
 SpellLib (included library)
 -------------------
-I created a library to access the spell data (name, id, rank, passive) for each class and specialization. You can check it out <a href="https://github.com/Timsche/wow-spellLib">here</a>.
+I created a library to access the spells (name, id, rank, passive) for each class and specialization. You can check it out <a href="https://github.com/Timsche/wow-spellLib">here</a>.
