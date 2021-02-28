@@ -1,0 +1,10 @@
+## Interface: 90002
+## Title: ClassInfo
+## Author: Xerokz
+## Notes: Spell for all Classes and specs
+## DefaultState: enabled
+## Version: 1.0
+
+embeds.xml
+
+ClassInfo.lua
