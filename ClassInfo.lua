@@ -3,7 +3,7 @@ l_debug = "|cffff0000Debug:|r "
 
 -- Code that you want to run when the addon is first loaded goes here.
 function ciAddon:OnInitialize()
-    self.spellLib = LibStub("SpellLib-1.0"):New()
+    self.spellLib = LibStub("SpellLib-1.02"):New()
     self.innerHeight = 583
     self.innerWidth = 771
     
