@@ -1,9 +1,30 @@
-local ciAddon = LibStub("AceAddon-3.0"):NewAddon("ClassInfo", "AceEvent-3.0", "AceConsole-3.0")
 l_debug = "|cffff0000Debug:|r "
+local ciAddon = LibStub("AceAddon-3.0"):NewAddon("ClassInfo", "AceEvent-3.0", "AceConsole-3.0")
+local ciLDB = LibStub("LibDataBroker-1.1"):NewDataObject("ClassInfoMinimap", {
+    type = "data source",
+    text = "ClassInfoMinimap toggle",
+    icon = "Interface\\Addons\\ClassInfo\\media\\minimap_logo",
+    OnClick = function()
+        ciAddon:Run()
+    end,
+})
+local mmIcon = LibStub("LibDBIcon-1.0")
 
 -- Code that you want to run when the addon is first loaded goes here.
-function ciAddon:OnInitialize()
+function ciAddon:OnInitialize()    
+    self.db = LibStub("AceDB-3.0"):New("ClassInfoDB", {
+        profile = { 
+            minimap = { 
+                hide = false,
+            }, 
+        },
+    })
+    mmIcon:Register("ClassInfoMinimap", ciLDB, self.db.profile.minimap)
+                        
     self.spellLib = LibStub("SpellLib-1.02"):New()
+    self.tooltip = CreateFrame( "GameTooltip", "CustomTooltip", nil, "GameTooltipTemplate" )
+    
+    
     self.innerHeight = 583
     self.innerWidth = 771
     
@@ -289,7 +310,7 @@ function ciAddon:OnInitialize()
                 specName = "PROTECTION"
             }
         },    
-    }
+    }    
 end
 
 -- Called when the addon is enabled
@@ -302,6 +323,40 @@ end
 
 -- Open Dialog
 function ciAddon:OnChatCommand(params)
+    if params == "" then
+        self:PrintCommandInfo()    
+    else
+        local commands = self:SplitString(params, " ")
+        if commands[1] == "minimap" then
+            self:ToggleMinimapButton()
+        elseif commands[1] == "show" then
+            self:Run()
+        elseif commands[1] == "hide" then
+            self.mainFrame:Hide()
+        else            
+            self:PrintCommandInfo()
+        end
+    end              
+end
+
+function ciAddon:PrintCommandInfo()
+    self:Print("Unknown Command! Use one of the following:\n")
+    print("|cffff0000/classinfo show|r => shows the mainpanel")
+    print("|cffff0000/classinfo hide|r => hides the mainpanel")
+    print("|cffff0000/classinfo minimap|r => shows/hides the minimap button")
+end
+
+-- Shows or hides the button on the minimap 
+function ciAddon:ToggleMinimapButton()
+    self.db.profile.minimap.hide = not self.db.profile.minimap.hide
+    if self.db.profile.minimap.hide then
+        mmIcon:Hide("ClassInfoMinimap")
+    else 
+        mmIcon:Show("ClassInfoMinimap")
+    end    
+end
+
+function ciAddon:Run()
     if(self.mainFrame == nil) then
         -- Main Frame with Background
         self.mainFrame = CreateFrame("Frame", "mainFrame", UIParent)
@@ -568,7 +623,7 @@ function ciAddon:OnChatCommand(params)
         end)                                                 
     end
     
-    self.mainFrame:Show()   
+    self.mainFrame:Show()     
 end
 
 -- hides all tabs
@@ -680,9 +735,16 @@ function ciAddon:SetClassTab(_class, _spec)
             end
             -- mouse event tooltip
             self.classTab.inner[_class][counter]['icon']:SetScript("OnEnter", function(self)                                                
-                GameTooltip:SetOwner(self, "ANCHOR_RIGHT")                       
+--                 ciAddon.tooltip:SetOwner(self, "ANCHOR_RIGHT")                       
+--                 ciAddon.tooltip:ClearLines()
+--                 ciAddon.tooltip:SetHyperlink(GetSpellLink(spelldata.id))
+                GameTooltip:SetOwner(self, "ANCHOR_RIGHT")                                       
                 GameTooltip:ClearLines()
-                GameTooltip:SetHyperlink(GetSpellLink(spelldata.id))       
+                GameTooltip:SetHyperlink(GetSpellLink(spelldata.id))
+--                 local cooldownMS, gcdMS = GetSpellBaseCooldown(spelldata.id)
+--                 local realCD = cooldownMS / 1000
+--                 GameTooltip:AddLine(realCD .. " seconds", 1, 1, 1)  
+--                 GameTooltip:Show()       
             end)
             self.classTab.inner[_class][counter]['icon']:SetScript("OnLeave", function(self)
                 GameTooltip:Hide()

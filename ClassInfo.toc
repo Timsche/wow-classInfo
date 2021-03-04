@@ -3,7 +3,8 @@
 ## Author: Xerokz
 ## Notes: Spell for all Classes and specs
 ## DefaultState: enabled
-## Version: 1.0
+## Version: 1.02
+## SavedVariables: ClassInfoDB
 
 embeds.xml
 
