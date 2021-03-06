@@ -5,7 +5,11 @@ local ciLDB = LibStub("LibDataBroker-1.1"):NewDataObject("ClassInfoMinimap", {
     text = "ClassInfoMinimap toggle",
     icon = "Interface\\Addons\\ClassInfo\\media\\minimap_logo",
     OnClick = function()
-        ciAddon:Run()
+        if ciAddon.mainFrame == nil or ciAddon.mainFrame:IsShown() == false then
+            ciAddon:Run()
+        else
+            ciAddon.mainFrame:Hide()
+        end
     end,
 })
 local mmIcon = LibStub("LibDBIcon-1.0")
