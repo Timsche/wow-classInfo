@@ -21,9 +21,7 @@ function ciAddon:OnInitialize()
     })
     mmIcon:Register("ClassInfoMinimap", ciLDB, self.db.profile.minimap)
                         
-    self.spellLib = LibStub("SpellLib-1.02"):New()
-    self.tooltip = CreateFrame( "GameTooltip", "CustomTooltip", nil, "GameTooltipTemplate" )
-    
+    self.spellLib = LibStub("SpellLib-1.03"):New()
     
     self.innerHeight = 583
     self.innerWidth = 771
@@ -359,9 +357,9 @@ end
 function ciAddon:Run()
     if(self.mainFrame == nil) then
         -- Main Frame with Background
-        self.mainFrame = CreateFrame("Frame", "mainFrame", UIParent)
-        self.mainFrame:SetPoint("CENTER", UIParent, 0, 120)        
+        self.mainFrame = CreateFrame("Frame", "ciMainFrame", UIParent, "MainFrameTemplate")
         self.mainFrame:SetSize(843, 653)
+        self.mainFrame:SetPoint("CENTER", UIParent, 0, 120)
         self.mainFrame.bgTexture = self.mainFrame:CreateTexture(nil, "BACKGROUND")
         self.mainFrame.bgTexture:SetTexture("Interface/Addons/ClassInfo/media/main_bg")
         self.mainFrame.bgTexture:SetAllPoints(self.mainFrame)
@@ -372,6 +370,9 @@ function ciAddon:Run()
         self.mainFrame:RegisterForDrag("LeftButton")
         self.mainFrame:SetScript("OnDragStart", self.mainFrame.StartMoving)
         self.mainFrame:SetScript("OnDragStop", self.mainFrame.StopMovingOrSizing)
+--         self.mainFrame:SetScript("OnEscapePressed", function(self)
+--             ciAddon.mainFrame:Hide()
+--         end)        
                 
         -- tabItems        
         self.tabbings = CreateFrame("Frame", "tabbings", self.mainFrame)
@@ -699,7 +700,7 @@ function ciAddon:SetClassTab(_class, _spec)
             self.classTab.inner[_class][counter].overlays['border']:SetPoint("LEFT")
         
             local subtext = ""
-            if spelldata.passive == 1 then
+            if spelldata.passive == true then
                 subtext = "Passive"
             elseif spelldata.rank > 1 then
                 subtext = "Rank " .. spelldata.rank
@@ -733,18 +734,18 @@ function ciAddon:SetClassTab(_class, _spec)
                     self.classTab.inner[_class][counter]:SetPoint("TOPLEFT", 20 + 220 + 30 + 220 + 30, -10 -(22 * (counter - 3)))
                 end
             end
-            -- mouse event tooltip
-            self.classTab.inner[_class][counter]['icon']:SetScript("OnEnter", function(self)                                                
---                 ciAddon.tooltip:SetOwner(self, "ANCHOR_RIGHT")                       
---                 ciAddon.tooltip:ClearLines()
---                 ciAddon.tooltip:SetHyperlink(GetSpellLink(spelldata.id))
-                GameTooltip:SetOwner(self, "ANCHOR_RIGHT")                                       
-                GameTooltip:ClearLines()
-                GameTooltip:SetHyperlink(GetSpellLink(spelldata.id))
---                 local cooldownMS, gcdMS = GetSpellBaseCooldown(spelldata.id)
---                 local realCD = cooldownMS / 1000
---                 GameTooltip:AddLine(realCD .. " seconds", 1, 1, 1)  
---                 GameTooltip:Show()       
+            
+            -- mouse events
+            self.classTab.inner[_class][counter]['icon']:RegisterForClicks("LeftButtonUp")
+            self.classTab.inner[_class][counter]['icon']:SetScript("OnClick", function(self, button, down)
+                if IsModifierKeyDown then
+                    if ACTIVE_CHAT_EDIT_BOX ~= nil then
+                        ACTIVE_CHAT_EDIT_BOX:Insert(GetSpellLink(spelldata.id))
+                    end
+                end
+            end)            
+            self.classTab.inner[_class][counter]['icon']:SetScript("OnEnter", function(self)
+                ciAddon:CreateSpellTooltip(self, spelldata)                 
             end)
             self.classTab.inner[_class][counter]['icon']:SetScript("OnLeave", function(self)
                 GameTooltip:Hide()
@@ -817,7 +818,7 @@ function ciAddon:SetSpecTab(_class, _spec)
             self.specTab.inner[_class][_spec][counter].overlays['border']:SetPoint("LEFT")
         
             local subtext = ""
-            if spelldata.passive == 1 then
+            if spelldata.passive == true then
                 subtext = "Passive"
             elseif spelldata.rank > 1 then
                 subtext = "Rank " .. spelldata.rank
@@ -851,11 +852,18 @@ function ciAddon:SetSpecTab(_class, _spec)
                     self.specTab.inner[_class][_spec][counter]:SetPoint("TOPLEFT", 20 + 220 + 30 + 220 + 30, -10 -(22 * (counter - 3)))
                 end
             end
-            -- mouse event tooltip
+            
+            -- mouse events
+            self.specTab.inner[_class][_spec][counter]['icon']:RegisterForClicks("LeftButtonUp")
+            self.specTab.inner[_class][_spec][counter]['icon']:SetScript("OnClick", function(self, button, down)
+                if IsModifierKeyDown then
+                    if ACTIVE_CHAT_EDIT_BOX ~= nil then
+                        ACTIVE_CHAT_EDIT_BOX:Insert(GetSpellLink(spelldata.id))
+                    end
+                end
+            end)
             self.specTab.inner[_class][_spec][counter]['icon']:SetScript("OnEnter", function(self)                                                
-                GameTooltip:SetOwner(self, "ANCHOR_RIGHT")                       
-                GameTooltip:ClearLines()
-                GameTooltip:SetHyperlink(GetSpellLink(spelldata.id))       
+                ciAddon:CreateSpellTooltip(self, spelldata)       
             end)
             self.specTab.inner[_class][_spec][counter]['icon']:SetScript("OnLeave", function(self)
                 GameTooltip:Hide()
@@ -951,11 +959,17 @@ function ciAddon:SetTalentsTab(_class, _spec)
                 self.talentsTab[_class][_spec].rows[rowCount][j].overlays['border']:SetPoint("LEFT")              
                 
             
-                -- mouse event tooltip
+                -- mouse events
+                self.talentsTab[_class][_spec].rows[rowCount][j]['icon']:RegisterForClicks("LeftButtonUp")
+                self.talentsTab[_class][_spec].rows[rowCount][j]['icon']:SetScript("OnClick", function(self, button, down)
+                    if IsModifierKeyDown then
+                        if ACTIVE_CHAT_EDIT_BOX ~= nil then
+                            ACTIVE_CHAT_EDIT_BOX:Insert(GetSpellLink(talent['id']))
+                        end
+                    end
+                end)
                 self.talentsTab[_class][_spec].rows[rowCount][j]['icon']:SetScript("OnEnter", function(self)
-                    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")                        
-                    GameTooltip:ClearLines()
-                    GameTooltip:SetHyperlink(GetSpellLink(talent['id']))       
+                    ciAddon:CreateSpellTooltip(self, talent)      
                 end)
                 self.talentsTab[_class][_spec].rows[rowCount][j]['icon']:SetScript("OnLeave", function(self)
                     GameTooltip:Hide()
@@ -999,11 +1013,18 @@ function ciAddon:SetTalentsTab(_class, _spec)
             self.talentsTab[_class][_spec]['covenants'][covName]['class'].overlays['border']:SetTexture("Interface\\Addons\\ClassInfo\\media\\btn_overlay")
             self.talentsTab[_class][_spec]['covenants'][covName]['class'].overlays['border']:SetTexCoord(13/64, 51/64, 13/64, 51/64)
             self.talentsTab[_class][_spec]['covenants'][covName]['class'].overlays['border']:SetPoint("CENTER", 15, 0)
-            -- mouse event tooltip
+            
+            -- mouse events
+            self.talentsTab[_class][_spec]['covenants'][covName]['class']['icon']:RegisterForClicks("LeftButtonUp")
+            self.talentsTab[_class][_spec]['covenants'][covName]['class']['icon']:SetScript("OnClick", function(self, button, down)
+                if IsModifierKeyDown then
+                    if ACTIVE_CHAT_EDIT_BOX ~= nil then
+                        ACTIVE_CHAT_EDIT_BOX:Insert(GetSpellLink(covenant_general[i]['id']))
+                    end
+                end
+            end)
             self.talentsTab[_class][_spec]['covenants'][covName]['class']['icon']:SetScript("OnEnter", function(self)
-                GameTooltip:SetOwner(self, "ANCHOR_RIGHT")                        
-                GameTooltip:ClearLines()
-                GameTooltip:SetHyperlink(GetSpellLink(covenant_general[i]['id']))       
+                ciAddon:CreateSpellTooltip(self, covenant_general[i])       
             end)
             self.talentsTab[_class][_spec]['covenants'][covName]['class']['icon']:SetScript("OnLeave", function(self)
                 GameTooltip:Hide()
@@ -1024,11 +1045,18 @@ function ciAddon:SetTalentsTab(_class, _spec)
             self.talentsTab[_class][_spec]['covenants'][covName]['spec'].overlays['border']:SetTexture("Interface\\Addons\\ClassInfo\\media\\btn_overlay")
             self.talentsTab[_class][_spec]['covenants'][covName]['spec'].overlays['border']:SetTexCoord(13/64, 51/64, 13/64, 51/64)
             self.talentsTab[_class][_spec]['covenants'][covName]['spec'].overlays['border']:SetPoint("CENTER", -15, 0)
-            -- mouse event tooltip
+            
+            -- mouse events
+            self.talentsTab[_class][_spec]['covenants'][covName]['spec']['icon']:RegisterForClicks("LeftButtonUp")
+            self.talentsTab[_class][_spec]['covenants'][covName]['spec']['icon']:SetScript("OnClick", function(self, button, down)
+                if IsModifierKeyDown then
+                    if ACTIVE_CHAT_EDIT_BOX ~= nil then
+                        ACTIVE_CHAT_EDIT_BOX:Insert(GetSpellLink(covenant_class[i]['id']))
+                    end
+                end
+            end)
             self.talentsTab[_class][_spec]['covenants'][covName]['spec']['icon']:SetScript("OnEnter", function(self)
-                GameTooltip:SetOwner(self, "ANCHOR_RIGHT")                        
-                GameTooltip:ClearLines()
-                GameTooltip:SetHyperlink(GetSpellLink(covenant_class[i]['id']))       
+                ciAddon:CreateSpellTooltip(self, covenant_class[i])       
             end)
             self.talentsTab[_class][_spec]['covenants'][covName]['spec']['icon']:SetScript("OnLeave", function(self)
                 GameTooltip:Hide()
@@ -1108,11 +1136,18 @@ function ciAddon:SetPvpTalentsTab(_class, _spec)
                     self.pvpTab[_class][_spec][counter]:SetPoint("TOPLEFT", 20 + 220 + 30 + 220 + 30, -10 -(22 * (counter - 3)))
                 end
             end
-            -- mouse event tooltip
+            
+            -- mouse events
+            self.pvpTab[_class][_spec][counter]['icon']:RegisterForClicks("LeftButtonUp")
+            self.pvpTab[_class][_spec][counter]['icon']:SetScript("OnClick", function(self, button, down)
+                if IsModifierKeyDown then
+                    if ACTIVE_CHAT_EDIT_BOX ~= nil then
+                        ACTIVE_CHAT_EDIT_BOX:Insert(GetSpellLink(spelldata.id))
+                    end
+                end
+            end)            
             self.pvpTab[_class][_spec][counter]['icon']:SetScript("OnEnter", function(self)                                                
-                GameTooltip:SetOwner(self, "ANCHOR_RIGHT")                       
-                GameTooltip:ClearLines()
-                GameTooltip:SetHyperlink(GetSpellLink(spelldata.id))       
+                ciAddon:CreateSpellTooltip(self, spelldata)      
             end)
             self.pvpTab[_class][_spec][counter]['icon']:SetScript("OnLeave", function(self)
                 GameTooltip:Hide()
@@ -1191,6 +1226,183 @@ function ciAddon:SetTabbing(name)
     end        
 end
 
+-- Creates a custom SpellTooltip for a certain spell
+function ciAddon:CreateSpellTooltip(parentElement, spelldata)    
+    local name, rank, icon, castTime, minRange, maxRange, spellId = GetSpellInfo(spelldata.id)
+    
+    GameTooltip:SetOwner(parentElement, "ANCHOR_RIGHT")                                       
+    GameTooltip:ClearLines()
+    
+    -- Name                                        
+    GameTooltip:AddLine(name, 1, 1, 1)        
+    
+    -- Replaces
+    if spelldata.isReplacement == true then
+       local replace_name, replace_rank, replace_icon, replace_castTime, replace_minRange, replace_maxRange, replace_spellId = GetSpellInfo(spelldata.replacesSpell)
+       GameTooltip:AddLine("Replaces " .. replace_name, 1, 0.82, 0)
+    end
+        
+    -- Passive
+    if spelldata.passive == true then
+        GameTooltip:AddLine("Passive", 1, 1, 1)
+    else   
+        -- cost / range
+        local powerTypes = {"Mana", "Rage", "Focus", "Energy", "Combo Points", "Runes", "Runic Power", "Soul Shards", "Lunar Power", "Holy Power", "Alternate", "Maelstrom", "Chi", "Insanity", "Obsolete", "Obsolete2", "Arcane Charges", "Fury", "Pain"}         
+        local costs = GetSpellPowerCost(spelldata.id)
+        local range = ""
+        if minRange > 0 then
+            range = minRange .. "-"                 
+        end
+        if maxRange > 0 then
+            if maxRange == 50000 then
+                range = range .. "Unlimited"
+            else 
+                range = range .. maxRange
+            end
+        end
+        if range ~= "Unlimited" and range ~= "" then
+            range = range .. " yd range"
+        end                               
+        if #costs > 0 then      
+            if #costs > 1 then
+                for c=1,(#costs - 1),1 do
+                    if costs[c].cost > 0 or costs[c].costPercent > 0 or costs[c].costPerSec > 0 then 
+                        local costname = powerTypes[costs[c]["type"] + 1]
+                        local costvalue = ""
+                        if costs[c].cost ~= nil and costs[c].minCost > 0 then
+                            costvalue = costs[c].minCost
+                        end
+                        if costs[c].cost ~= nil and costs[c].cost > 0 and costs[c].minCost ~= costs[c].cost then
+                            costvalue = costvalue .. " - " .. costs[c].cost
+                        end                        
+                        if costs[c].costPercent > 0 then
+                            costvalue = costs[c].costPercent .. "%"
+                        end
+                        if costs[c].costPerSec > 0 then
+                            costvalue = costs[c].costPerSec
+                        end
+                                                                                                
+                        local costStr = costvalue .. " " .. costname
+                        if costs[c].costPerSec > 0 then
+                            costStr = costStr .. " per sec"
+                        end
+                        GameTooltip:AddLine(costStr, 1, 1, 1)
+                    end
+                end
+            end
+            if costs[#costs].cost > 0 or costs[#costs].costPercent > 0 or costs[#costs].costPerSec > 0  then                                                   
+                local costname = powerTypes[costs[#costs]["type"] + 1]
+                local costvalue = ""                                                                
+                if costs[#costs].minCost > 0 then
+                    costvalue = costs[#costs].minCost
+                end
+                if costs[#costs].cost ~= nil and costs[#costs].cost > 0 and costs[#costs].minCost ~= costs[#costs].cost then
+                    costvalue = costvalue .. " - " .. costs[#costs].cost
+                end
+                if costs[#costs].costPercent > 0 then
+                    costvalue = costs[#costs].costPercent .. "%"
+                end
+                if costs[#costs].costPerSec > 0 then
+                    costvalue = costs[#costs].costPerSec
+                end                                             
+                local costStr = costvalue .. " " .. costname 
+                if costs[#costs].costPerSec > 0 then
+                    costStr = costStr .. " per sec"
+                end                
+                if range ~= "" then                        
+                    GameTooltip:AddDoubleLine(costStr, range, 1, 1, 1, 1, 1, 1)
+                else
+                    GameTooltip:AddLine(costStr, 1, 1, 1)
+                end
+            elseif range ~= "" then
+                GameTooltip:AddLine(range, 1, 1, 1)
+            end                    
+        else
+            if range ~= "" then
+                GameTooltip:AddLine(range, 1, 1, 1)
+            end
+        end                
+        
+        -- casttime / cooldown
+        local cooldownMS, gcdMS = GetSpellBaseCooldown(spelldata.id)
+        if castTime == 0 then
+            if cooldownMS > 0 then
+                local cdSecs = cooldownMS / 1000
+                local cdRestSecs = cdSecs % 60             
+                local cdMins = cdSecs - cdRestSecs / 60
+                local realCD = round(cdSecs / 60, 1)
+                local displayCD = ""
+                if cdSecs < 60 then
+                    displayCD = cdRestSecs .. " sec"
+                else
+                    displayCD = realCD .. " min"
+                end             
+                GameTooltip:AddDoubleLine("Instant", displayCD .. " cooldown", 1, 1, 1, 1, 1, 1)
+            else
+                GameTooltip:AddLine("Instant", 1, 1, 1)
+            end
+        else
+            local realCastTime = round(castTime / 1000, 1)
+            if cooldownMS > 0 then
+                local realCD = round(cooldownMS / 1000, 1)
+                GameTooltip:AddDoubleLine(realCastTime .. " sec cast", realCD .. " sec cooldown", 1, 1, 1, 1, 1, 1)
+            else
+                GameTooltip:AddLine(realCastTime .. " sec cast", 1, 1, 1)
+            end
+        end                
+        
+        if spelldata.requiresAura == true then            
+            local required_aura = "";
+            if type(spelldata.requiredAuraID) == table then
+                for a, aura in pairs(spelldata.requiredAuraID) do
+                    local aura_name, aura_rank, aura_icon, aura_castTime, aura_minRange, aura_maxRange, aura_spellId = GetSpellInfo(spelldata.requiredAuraID[a])
+                    if a == 1 then
+                        required_aura = aura_name
+                    else
+                        required_aura = required_aura .. ", " .. aura_name
+                    end
+                end
+            else
+                local aura_name, aura_rank, aura_icon, aura_castTime, aura_minRange, aura_maxRange, aura_spellId = GetSpellInfo(spelldata.requiredAuraID[1])
+                required_aura = aura_name
+            end            
+            GameTooltip:AddLine("Requires " .. required_aura, 1, 0, 0)    
+        end
+    end
+    
+    -- description 
+    local spell = Spell:CreateFromSpellID(spelldata.id)
+    spell:ContinueOnSpellLoad(function() 
+        GameTooltip:AddLine(spell:GetSpellDescription(), 1, 0.82, 0, 1)
+        GameTooltip:AddDoubleLine("SpellID", spelldata.id, 1, 0.82, 0, 1, 1, 1)
+        GameTooltip:Show()                                             	
+    end)
+end
+
+function ciAddon:GetHexFromRGB(red, green, blue)
+    local hexadecimal = "";   
+    local rgb = {red, green, blue} 
+    for key, value in pairs(rgb) do
+		local hex = ''
+
+		while(value > 0)do
+			local index = math.fmod(value, 16) + 1
+			value = math.floor(value / 16)
+			hex = string.sub('0123456789ABCDEF', index, index) .. hex			
+		end
+
+		if(string.len(hex) == 0)then
+			hex = '00'
+
+		elseif(string.len(hex) == 1)then
+			hex = '0' .. hex
+		end
+
+		hexadecimal = hexadecimal .. hex
+	end
+    return hexadecimal;
+end
+
 -- Splits a String into a table
 -- s => the input string
 -- delimiter => char as delimiter
@@ -1200,4 +1412,9 @@ function ciAddon:SplitString(s, delimiter)
         table.insert(result, match)
     end
     return result
+end
+
+function round(num, numDecimalPlaces)
+  local mult = 10^(numDecimalPlaces or 0)
+  return math.floor(num * mult + 0.5) / mult
 end
